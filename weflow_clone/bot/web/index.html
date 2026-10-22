@@ -564,6 +564,10 @@ function toast(text, isError = false) {
 renderAll();
 loadState();
 $("input").focus();
+// 深链接：/#settings 直接打开设置面板（方便截图、也方便分享「来这儿填 Key」）
+if (location.hash === "#settings" || location.hash === "#config") {
+  $("overlay").classList.add("show");
+}
 </script>
 </body>
 </html>

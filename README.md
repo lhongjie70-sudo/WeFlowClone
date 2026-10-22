@@ -66,6 +66,21 @@
 
 ---
 
+## 🖼 界面预览
+
+<table>
+<tr>
+<td width="50%"><img src="docs/assets/screenshot-chat.png" alt="聊天界面"></td>
+<td width="50%"><img src="docs/assets/screenshot-settings.png" alt="设置面板"></td>
+</tr>
+<tr>
+<td align="center"><sub>聊天界面 · 没有数据时会引导你运行 <code>wfc pull</code></sub></td>
+<td align="center"><sub>设置面板 · 填任意 OpenAI 兼容接口，Key 只存在本机</sub></td>
+</tr>
+</table>
+
+---
+
 ## 🚀 三分钟开始
 
 ### 方式一：下载即用（推荐给普通用户）
