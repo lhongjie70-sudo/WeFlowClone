@@ -39,24 +39,26 @@
 <tr>
 <td width="50%" valign="top">
 
-### 🟢 只想用
-下载安装包 → 双击 → 在网页里填一个 API Key → 直接聊天。
-
-- 不需要 Python
-- 不需要显卡
-- 不需要训练
-- 支持 DeepSeek / 通义 / Moonshot / OpenAI / 本地 Ollama
+<h3>🟢 只想用</h3>
+<p>下载安装包 → 双击 → 在网页里填一个 API Key → 直接聊天。</p>
+<ul>
+  <li>不需要 Python</li>
+  <li>不需要显卡</li>
+  <li>不需要训练</li>
+  <li>支持 DeepSeek / 通义 / Moonshot / OpenAI / 本地 Ollama</li>
+</ul>
 
 </td>
 <td width="50%" valign="top">
 
-### 🔵 想更像
-接上 WeFlow，一条命令把聊天记录变成训练数据，再用 LoRA 微调。
-
-- `wfc pull` 自动拉取 + 转格式
-- `wfc prepare` 训练前先体检
-- `wfc train` 一键微调
-- `wfc serve` 起服务接微信 / Discord
+<h3>🔵 想更像</h3>
+<p>接上 WeFlow，一条命令把聊天记录变成训练数据，再用 LoRA 微调。</p>
+<ul>
+  <li><code>wfc pull</code> 自动拉取 + 转格式</li>
+  <li><code>wfc prepare</code> 训练前先体检</li>
+  <li><code>wfc train</code> 一键微调</li>
+  <li><code>wfc serve</code> 起服务接微信 / Discord</li>
+</ul>
 
 </td>
 </tr>
