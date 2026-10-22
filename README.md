@@ -19,8 +19,8 @@ WeFlow（本机微信数据 · 实时）  ──HTTP API──▶  WeFlowClone�
 
 | 平台 | 下载 | 使用 |
 | --- | --- | --- |
-| Windows 10/11 x64 | `WeFlowClone-1.0.0-win64.zip`（8.5 MB） | 解压 → 双击 `WeFlowClone\WeFlowClone.exe` |
-| macOS（Intel / Apple Silicon） | `WeFlowClone-1.0.0-macos-<arch>.dmg` | 拖进「应用程序」，首次右键 → 打开 |
+| Windows 10/11 x64 | `WeFlowClone-1.0.1-win64.zip`（8.5 MB） | 解压 → 双击 `WeFlowClone\WeFlowClone.exe` |
+| macOS（Intel / Apple Silicon） | `WeFlowClone-1.0.1-macos-<arch>.dmg` | 拖进「应用程序」，首次右键 → 打开 |
 
 > 解压后的目录里，`WeFlowClone.exe` 是入口，`_internal\` 是运行时，别把它们拆开。
 

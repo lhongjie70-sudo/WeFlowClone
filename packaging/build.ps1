@@ -22,7 +22,15 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $BuildVenv = Join-Path $Root ".build-venv"
 $VenvPy = Join-Path $BuildVenv "Scripts\python.exe"
-$Version = "1.0.0"
+$Version = "1.0.1"
+
+# 版本号必须与 pyproject.toml 一致，否则产物名和 Release 标签会对不上
+$pyprojectVersion = (
+    Select-String -Path (Join-Path $Root "pyproject.toml") -Pattern '^version\s*=\s*"([^"]+)"'
+).Matches[0].Groups[1].Value
+if ($pyprojectVersion -and $pyprojectVersion -ne $Version) {
+    throw "build.ps1 版本 $Version 与 pyproject.toml 的 $pyprojectVersion 不一致，请先运行 scripts/bump_version.py"
+}
 
 function Step($msg) { Write-Host "`n> $msg" -ForegroundColor Cyan }
 function Ok($msg) { Write-Host "[ok] $msg" -ForegroundColor Green }
@@ -44,9 +52,11 @@ if (-not (Test-Path $VenvPy)) {
         $pre = @()
         if ($parts.Length -gt 1) { $pre = $parts[1..($parts.Length - 1)] }
         try {
-            $version = & $parts[0] @pre -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>$null
+            # 注意：变量名不能叫 $version —— PowerShell 变量名不区分大小写，
+            # 会把上面的 $Version（产物版本号）覆盖成 "3.12"。
+            $pyVersion = & $parts[0] @pre -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>$null
         } catch { continue }
-        if ($version -eq "3.12") { $chosen = $candidate; break }
+        if ($pyVersion -eq "3.12") { $chosen = $candidate; break }
     }
     if (-not $chosen) { throw "需要 Python 3.12（WeClone 要求），请先安装" }
     $parts = $chosen.Split(" ")

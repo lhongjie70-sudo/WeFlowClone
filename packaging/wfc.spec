@@ -98,8 +98,8 @@ if sys.platform == "darwin":  # noqa: F821
         info_plist={
             "CFBundleName": "WeFlowClone",
             "CFBundleDisplayName": "WeFlowClone",
-            "CFBundleShortVersionString": "1.0.0",
-            "CFBundleVersion": "1.0.0",
+            "CFBundleShortVersionString": "1.0.1",
+            "CFBundleVersion": "1.0.1",
             "NSHighResolutionCapable": True,
             "LSMinimumSystemVersion": "11.0",
             "NSHumanReadableCopyright": "AGPL-3.0 · 基于 WeClone（AGPL-3.0），对接 WeFlow（CC BY-NC-SA 4.0，不可商用）",

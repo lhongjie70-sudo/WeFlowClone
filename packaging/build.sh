@@ -11,7 +11,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_VENV="$ROOT/.build-venv"
-VERSION="1.0.0"
+VERSION="1.0.1"
 ARCH="$(uname -m)"
 PY="${PYTHON:-python3}"
 

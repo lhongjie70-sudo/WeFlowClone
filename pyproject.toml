@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "weflow-clone"
-version = "1.0.0"
+version = "1.0.1"
 description = "WeFlowClone - 以 WeFlow 为聊天数据底座、以 WeClone 为训练与推理引擎的数字分身工作站"
 readme = "README.md"
 requires-python = ">=3.10"
