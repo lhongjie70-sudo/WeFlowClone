@@ -45,15 +45,21 @@ echo "> PyInstaller 打包"
   "$ROOT/packaging/wfc.spec"
 
 if [ "$(uname)" = "Darwin" ]; then
-  echo "> 生成 DMG"
+  echo "> 生成 DMG 与 ZIP"
   rm -f "$ROOT/dist/WeFlowClone-$VERSION-macos-$ARCH.dmg"
+  rm -f "$ROOT/dist/WeFlowClone-$VERSION-macos-$ARCH.zip"
   # 首次运行提示：未签名应用需要右键打开
   hdiutil create \
     -volname "WeFlowClone" \
     -srcfolder "$ROOT/dist/WeFlowClone.app" \
     -ov -format UDZO \
     "$ROOT/dist/WeFlowClone-$VERSION-macos-$ARCH.dmg"
+  # zip 方便某些下载场景 / 自动化解包
+  ditto -c -k --sequesterRsrc --keepParent \
+    "$ROOT/dist/WeFlowClone.app" \
+    "$ROOT/dist/WeFlowClone-$VERSION-macos-$ARCH.zip"
   echo "[ok] dist/WeFlowClone-$VERSION-macos-$ARCH.dmg"
+  echo "[ok] dist/WeFlowClone-$VERSION-macos-$ARCH.zip"
   echo "[ok] dist/WeFlowClone.app"
 else
   # Linux 下给一个 tar.gz，方便本地验证

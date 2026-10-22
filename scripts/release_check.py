@@ -113,6 +113,7 @@ def _grep(path: Path, pattern: str) -> str:
 def check_files(report: Report) -> None:
     required = [
         "README.md",
+        "CONTRIBUTING.md",
         "LICENSE",
         "NOTICE.md",
         "pyproject.toml",
@@ -128,6 +129,7 @@ def check_files(report: Report) -> None:
         "scripts/setup.ps1",
         "scripts/start.ps1",
         "scripts/release_check.py",
+        "scripts/bump_version.py",
         "安装.bat",
         "启动.bat",
         "启动-模型服务.bat",
@@ -151,6 +153,9 @@ def check_docs_links(report: Report) -> None:
         for match in re.finditer(r"\]\(([^)\s]+)\)", text):
             target = match.group(1)
             if target.startswith(("http://", "https://", "#", "mailto:")):
+                continue
+            # GitHub 仓库内相对跳转（../../releases、/issues 等）不是本地文件
+            if target.startswith(("..", "/")) or "releases" in target:
                 continue
             target = target.split("#")[0]
             if not target:
@@ -279,6 +284,94 @@ def check_packaging_assets(report: Report) -> None:
         report.add(Result("打包资源", False, "；".join(problems)))
     else:
         report.add(Result("打包资源", True, "界面资源 / onedir / 图标齐全"))
+
+
+def check_source_only(report: Report) -> None:
+    """仓库是「源码仓库」：不能把构建产物提交进去。
+
+    约束：被 git 跟踪的文件里不能有 exe/dll/zip/dmg，单个文件不超过 2MB
+    （图标、vendor 里的小资源除外）。
+    """
+    if not (ROOT / ".git").exists():
+        report.add(Result("源码仓库", False, "还没有 git 仓库，无法判断", "先 git init 并提交", blocking=False))
+        return
+
+    try:
+        listed = subprocess.run(
+            ["git", "ls-files", "-z"], cwd=str(ROOT), capture_output=True, check=True
+        ).stdout.decode("utf-8", errors="replace")
+    except (OSError, subprocess.CalledProcessError) as exc:
+        report.add(Result("源码仓库", False, f"git 调用失败：{exc}", blocking=False))
+        return
+
+    tracked = [item for item in listed.split("\0") if item]
+    binaries = [
+        item
+        for item in tracked
+        if Path(item).suffix.lower() in {".exe", ".dll", ".so", ".dylib", ".zip", ".dmg", ".msi"}
+    ]
+    oversized: list[str] = []
+    for item in tracked:
+        path = ROOT / item
+        try:
+            if path.is_file() and path.stat().st_size > 2 * 1024 * 1024:
+                oversized.append(f"{item}({path.stat().st_size // 1024}KB)")
+        except OSError:
+            continue
+
+    problems: list[str] = []
+    if binaries:
+        problems.append(f"提交了二进制：{', '.join(binaries[:3])}")
+    if oversized:
+        problems.append(f"超过 2MB：{', '.join(oversized[:3])}")
+    if problems:
+        report.add(Result("源码仓库", False, "；".join(problems), "产物应由 Releases 分发，不要提交进仓库"))
+    else:
+        report.add(Result("源码仓库", True, f"{len(tracked)} 个文件，无构建产物"))
+
+
+def check_tag_version(report: Report, version: str) -> None:
+    if not (ROOT / ".git").exists():
+        report.add(Result("tag 与版本", False, "没有 git 仓库，跳过", blocking=False))
+        return
+    if not version:
+        report.add(Result("tag 与版本", False, "版本号未知", blocking=False))
+        return
+    try:
+        described = subprocess.run(
+            ["git", "describe", "--tags", "--exact-match", "HEAD"],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        report.add(Result("tag 与版本", False, f"git 调用失败：{exc}", blocking=False))
+        return
+
+    tag = (described.stdout or "").strip()
+    if described.returncode != 0 or not tag:
+        report.add(
+            Result(
+                "tag 与版本",
+                False,
+                f"当前提交没有 tag（版本 {version}）",
+                f"发版时执行：git tag v{version} && git push origin v{version}",
+                blocking=False,
+            )
+        )
+        return
+    if tag.lstrip("v") != version:
+        report.add(
+            Result(
+                "tag 与版本",
+                False,
+                f"tag {tag} 与版本 {version} 不一致",
+                "用 scripts/bump_version.py 升版本，再重新打 tag",
+            )
+        )
+    else:
+        report.add(Result("tag 与版本", True, tag))
 
 
 # --------------------------------------------------------------------------- #
@@ -445,6 +538,8 @@ def main(argv: list[str] | None = None) -> int:
     check_gitignore(report)
     check_workflows(report)
     check_packaging_assets(report)
+    check_source_only(report)
+    check_tag_version(report, version)
 
     if args.build:
         print("\n> 重新构建（可能耗时几分钟）…")

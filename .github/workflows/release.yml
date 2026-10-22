@@ -1,6 +1,7 @@
 name: Release
 
-# 打 tag（v1.0.0）或手动触发时，在三个平台上构建可下载的安装包。
+# 仓库只放源码；打 tag 时由 CI 构建三平台产物并挂到 GitHub Releases。
+# 下载页的 zip / dmg 全部来自这里，不存在「本地打包再手传」的路径。
 on:
   push:
     tags: ["v*"]
@@ -21,11 +22,12 @@ jobs:
             label: Windows x64
             shell: pwsh
             artifact: WeFlowClone-win64
-          - os: macos-13          # Intel
+          # macos-13 = Intel；若 GitHub 退役该镜像，改成 macos-15-intel
+          - os: macos-13
             label: macOS x86_64
             shell: bash
             artifact: WeFlowClone-macos-x86_64
-          - os: macos-14          # Apple Silicon
+          - os: macos-14
             label: macOS arm64
             shell: bash
             artifact: WeFlowClone-macos-arm64
@@ -38,10 +40,27 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 校验 tag 与代码里的版本一致
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, pathlib, re, sys
+          version = re.search(
+              r'^version\s*=\s*"([^"]+)"',
+              pathlib.Path("pyproject.toml").read_text(encoding="utf-8"),
+              re.MULTILINE,
+          ).group(1)
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          print(f"tag={tag} code={version}")
+          if tag != version:
+              sys.exit(f"tag 与 pyproject 版本不一致：请先运行 scripts/bump_version.py {tag}")
+          PY
+
       - name: 运行测试
         shell: ${{ matrix.shell }}
         run: |
-          python -m pip install --quiet pytest
+          python -m pip install --quiet pyyaml
           python -m unittest discover -s tests -t tests
 
       - name: 构建（Windows）
@@ -56,38 +75,59 @@ jobs:
           chmod +x packaging/build.sh
           ./packaging/build.sh
 
-      - name: 上传产物
+      - name: 生成 SHA256 校验和
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib
+          lines = []
+          for path in sorted(pathlib.Path("dist").glob("*")):
+              if path.suffix.lower() in {".zip", ".dmg"} and path.is_file():
+                  digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                  lines.append(f"{digest}  {path.name}")
+          pathlib.Path("dist/SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("\n".join(lines))
+          PY
+
+      - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: |
             dist/*.zip
             dist/*.dmg
+            dist/SHA256SUMS.txt
           if-no-files-found: error
 
-      - name: 发布 Release
+      - name: 发布到 Releases
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/*.zip
             dist/*.dmg
+            dist/SHA256SUMS.txt
           generate_release_notes: true
           body: |
-            ## 下载后怎么用
+            ## 下载
 
-            1. **Windows**：解压 `WeFlowClone-*-win64.zip`，双击 `WeFlowClone.exe`；
-               **macOS**：打开 `WeFlowClone-*.dmg`，把 `WeFlowClone.app` 拖进「应用程序」，
-               首次打开请右键 → 打开（应用未签名）。
-            2. 浏览器会自动打开 `http://127.0.0.1:8765`。
-            3. 点右上角「设置」，填 **API 地址 / API Key / 模型名**，保存后即可聊天。
+            | 平台 | 文件 |
+            | --- | --- |
+            | Windows 10/11 x64 | `WeFlowClone-*-win64.zip` → 解压后双击 `WeFlowClone\WeFlowClone.exe` |
+            | macOS Apple Silicon | `WeFlowClone-*-macos-arm64.dmg`（或同名 `.zip`） |
+            | macOS Intel | `WeFlowClone-*-macos-x86_64.dmg`（或同名 `.zip`） |
 
-            > 想要「像你」而不是通用对话：先装 [WeFlow](https://github.com/hicccc77/WeFlow)，
-            > 在它的设置里开启 API 服务并复制 Token，然后在本机运行
-            > `WeFlowClone.exe pull`（macOS 用终端执行 `WeFlowClone pull`）导入聊天记录，
-            > 机器人会自动学习你的说话习惯。
+            校验和见 `SHA256SUMS.txt`。macOS 首次打开请 **右键 → 打开**（应用未签名）。
+
+            ## 三步用起来
+
+            1. 启动程序，浏览器自动打开 `http://127.0.0.1:8765`；
+            2. 右上角「设置」→ 填 **API 地址 / API Key / 模型名** → 测试连接 → 保存；
+            3. 开始聊天。
+
+            > 想让它「像你」：装好 [WeFlow](https://github.com/hicccc77/WeFlow) 并开启 API 服务，
+            > 设置 `WEFLOW_TOKEN` 后运行 `WeFlowClone pull`，再 `WeFlowClone bot --reindex`。
             >
-            > 该发行包只包含数据接入与机器人，不含训练组件（torch/LLaMA-Factory）；
-            > 需要微调出自己的模型请按仓库 README 的完整安装流程操作。
-
-            **许可提醒**：本项目以 AGPL-3.0 发布（含 WeClone），并对接 CC BY-NC-SA 4.0 的 WeFlow，不可用于商业用途。
+            > 想改代码 / 自己训练：仓库就是源码，见 `CONTRIBUTING.md` 与 `docs/`。
+            >
+            > 许可：本项目 AGPL-3.0（含 WeClone），对接 CC BY-NC-SA 4.0 的 WeFlow，**不可商用**。

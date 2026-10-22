@@ -12,6 +12,9 @@ WeFlow（本机微信数据 · 实时）  ──HTTP API──▶  WeFlowClone�
 
 ## 0. 下载即用（Windows / macOS）
 
+> **本仓库只放源码**，方便你 fork、改功能、自己训练。
+> 想直接用请到 **[Releases](../../releases)** 下载对应平台的包。
+
 不需要 Python、不需要显卡、不需要训练——**装好就能聊，只填一个 API Key**。
 
 | 平台 | 下载 | 使用 |
@@ -121,15 +124,18 @@ WeFlowClone/
 ├─ data/                      ← 所有产物：dataset/csv、dataset/media、res_csv、model_output
 ├─ scripts/
 │  ├─ setup.ps1               ← 建 .venv、装依赖、生成配置
-│  └─ start.ps1               ← 自检 → 同步 → 启动服务
+│  ├─ start.ps1               ← 自检 → 同步 → 启动（默认内置机器人）
+│  ├─ release_check.py        ← 发布闸门：版本/链接/密钥/workflow/测试/产物
+│  └─ bump_version.py         ← 一处改版本，同步到 5 个文件
 ├─ integrations/              ← 两个上游各自的对接说明
 ├─ docs/                      ← 架构、快速开始、字段映射、API、训练、FAQ、打包
 ├─ packaging/                 ← PyInstaller 规格 + 双平台构建脚本 + 图标
 │  ├─ wfc.spec                ← 单文件打包（只含整合层，不含 torch）
 │  ├─ build.ps1 / build.sh    ← Windows / macOS 构建
 │  └─ launcher.py             ← 双击 → 直接启动机器人
-├─ .github/workflows/release.yml ← 三平台 CI：测试 → 打包 → 发布
+├─ .github/workflows/         ← ci.yml（每次提交跑检查）+ release.yml（打 tag 出三平台包）
 ├─ tests/                     ← 93 个测试（含端到端，跑在模拟 WeFlow 上）
+├─ CONTRIBUTING.md            ← 二创指南：目录即架构、常见改造点、PR 清单
 ├─ 安装.bat / 启动.bat         ← 双击即可
 └─ pyproject.toml             ← 安装后得到 `wfc` 命令
 ```
@@ -385,6 +391,38 @@ python -m weflow_clone.tools.mock_weflow --port 5031
 8. [打包与分发](docs/08-打包与分发.md) —— Windows/macOS 产物、签名、CI 发布
 9. [内置机器人](docs/09-内置机器人.md) —— 人设、检索、参数调优
 10. [发布前检查](docs/10-发布前检查.md) —— 一条命令跑完本地闸门再推 GitHub
+
+---
+
+## 12. 二创与版本
+
+**仓库是源码，Releases 是产物。** 两条链路互不干扰：
+
+| 你想做的事 | 怎么做 |
+| --- | --- |
+| fork 后改功能 | `CONTRIBUTING.md` 有「目录即架构」与 6 个常见改造点（换数据源 / 换模型 / 改人设 / 改界面 / 加命令 / 走训练） |
+| 自己发一个版本 | `python scripts/bump_version.py 1.1.0` → `python scripts/release_check.py --build` → `git tag v1.1.0` → `git push --tags` |
+| 只想下载来用 | 直接去 Releases 拿 `win64.zip` / `macos-*.dmg`，不用碰代码 |
+
+发布时 CI 会自动：
+
+1. 校验 tag 与 `pyproject.toml` 版本一致（不一致直接失败，避免「版本漂移」）；
+2. 在 Windows、macOS Intel、macOS ARM 上跑测试并构建；
+3. 生成 `SHA256SUMS.txt`；
+4. 把产物与校验和挂到 Releases，并附上下载说明。
+
+本地想先演练一遍：
+
+```powershell
+python scripts\release_check.py            # 静态检查 + 测试 + 校验已有产物
+python scripts\release_check.py --build    # 重新构建再检查
+```
+
+通过后会生成 `release/RELEASE_NOTES.md` 与 `release/SHA256SUMS.txt`，
+可直接贴到 GitHub Release。
+
+> 许可：本项目 AGPL-3.0（含 WeClone 上游），对接 CC BY-NC-SA 4.0 的 WeFlow，**不可商用**。
+> fork 后分发（包括作为网络服务运行）需以 AGPL-3.0 公开源码。
 
 ---
 
