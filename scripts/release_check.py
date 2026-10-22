@@ -117,7 +117,7 @@ def check_files(report: Report) -> None:
         "NOTICE.md",
         "pyproject.toml",
         ".gitignore",
-        "weflow.jsonc",
+        "weflow_clone/pipeline/bootstrap.py",
         "weflow_clone/cli.py",
         "weflow_clone/bot/web/index.html",
         "packaging/wfc.spec",
