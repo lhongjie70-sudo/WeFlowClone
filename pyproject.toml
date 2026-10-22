@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weflow-clone"
+version = "1.0.0"
+description = "WeFlowClone - 以 WeFlow 为聊天数据底座、以 WeClone 为训练与推理引擎的数字分身工作站"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "WeFlowClone contributors" }]
+keywords = ["weflow", "weclone", "wechat", "llm", "digital-twin"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: Microsoft :: Windows",
+]
+# 集成层刻意只依赖标准库：即使还没装 torch / llamafactory，也能先把数据管线跑通。
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+wfc = "weflow_clone.cli:main"
+weflow-clone = "weflow_clone.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["weflow_clone*"]
+
+[tool.setuptools.package-data]
+# 内置机器人的单文件界面，必须随包分发（源码运行 / pip 安装 / 打包都需要）
+"weflow_clone.bot" = ["web/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

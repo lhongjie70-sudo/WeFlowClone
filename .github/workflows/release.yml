@@ -1,0 +1,93 @@
+name: Release
+
+# 打 tag（v1.0.0）或手动触发时，在三个平台上构建可下载的安装包。
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows x64
+            shell: pwsh
+            artifact: WeFlowClone-win64
+          - os: macos-13          # Intel
+            label: macOS x86_64
+            shell: bash
+            artifact: WeFlowClone-macos-x86_64
+          - os: macos-14          # Apple Silicon
+            label: macOS arm64
+            shell: bash
+            artifact: WeFlowClone-macos-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 运行测试
+        shell: ${{ matrix.shell }}
+        run: |
+          python -m pip install --quiet pytest
+          python -m unittest discover -s tests -t tests
+
+      - name: 构建（Windows）
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./packaging/build.ps1
+
+      - name: 构建（macOS）
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          chmod +x packaging/build.sh
+          ./packaging/build.sh
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            dist/*.zip
+            dist/*.dmg
+          if-no-files-found: error
+
+      - name: 发布 Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/*.dmg
+          generate_release_notes: true
+          body: |
+            ## 下载后怎么用
+
+            1. **Windows**：解压 `WeFlowClone-*-win64.zip`，双击 `WeFlowClone.exe`；
+               **macOS**：打开 `WeFlowClone-*.dmg`，把 `WeFlowClone.app` 拖进「应用程序」，
+               首次打开请右键 → 打开（应用未签名）。
+            2. 浏览器会自动打开 `http://127.0.0.1:8765`。
+            3. 点右上角「设置」，填 **API 地址 / API Key / 模型名**，保存后即可聊天。
+
+            > 想要「像你」而不是通用对话：先装 [WeFlow](https://github.com/hicccc77/WeFlow)，
+            > 在它的设置里开启 API 服务并复制 Token，然后在本机运行
+            > `WeFlowClone.exe pull`（macOS 用终端执行 `WeFlowClone pull`）导入聊天记录，
+            > 机器人会自动学习你的说话习惯。
+            >
+            > 该发行包只包含数据接入与机器人，不含训练组件（torch/LLaMA-Factory）；
+            > 需要微调出自己的模型请按仓库 README 的完整安装流程操作。
+
+            **许可提醒**：本项目以 AGPL-3.0 发布（含 WeClone），并对接 CC BY-NC-SA 4.0 的 WeFlow，不可用于商业用途。

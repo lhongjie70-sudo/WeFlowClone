@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.build-venv/
+
+# 打包产物（CI 会重新生成）
+packaging/icon.ico
+packaging/icon.icns
+packaging/icon.iconset/
+
+# 配置（含 Token）
+weflow.jsonc
+vendor/WeClone/settings.jsonc
+
+# 数据与产物（体积大 / 含隐私）
+data/
+logs/
+
+# 测试与工具
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
