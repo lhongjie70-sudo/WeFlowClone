@@ -21,6 +21,24 @@ import time
 import webbrowser
 from pathlib import Path
 
+
+def _ensure_utf8_streams() -> None:
+    """让中文输出在任何终端 / CI 里都不会炸。
+
+    Windows 上 stdout 是管道时默认用 cp1252 / cp936，``print("✓")`` 会抛
+    ``UnicodeEncodeError``（GitHub Actions 的 Windows runner 就是这样）。
+    这里统一转成 UTF-8，并让不可编码字符降级替换而不是抛错，
+    用户不必再自己设 ``PYTHONIOENCODING``。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
+_ensure_utf8_streams()
+
 from . import __version__
 from .config import (
     ConfigError,

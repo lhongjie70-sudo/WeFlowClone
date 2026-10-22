@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 import time
@@ -54,6 +55,10 @@ def web_dir() -> Path:
 
 class BotServer(ThreadingHTTPServer):
     daemon_threads = True
+
+    # Windows 上 SO_REUSEADDR 允许「两个进程绑同一个端口」，结果第二个实例
+    # 看起来启动成功、实际收不到请求。这里关掉，让重复启动直接报错。
+    allow_reuse_address = os.name != "nt"
 
     def __init__(self, address: tuple[str, int], settings: Settings) -> None:
         super().__init__(address, BotHandler)

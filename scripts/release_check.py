@@ -35,6 +35,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TESTS_MIN = 90
 
+# Windows CI 里 stdout 是管道，默认 cp1252 会直接让中文打印抛 UnicodeEncodeError，
+# 表现为「Process completed with exit code 1」而看不到任何输出。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError, ValueError):
+        pass
+
 
 @dataclass
 class Result:
@@ -130,6 +138,8 @@ def check_files(report: Report) -> None:
         "scripts/start.ps1",
         "scripts/release_check.py",
         "scripts/bump_version.py",
+        "scripts/verify_tag.py",
+        "scripts/make_checksums.py",
         "安装.bat",
         "启动.bat",
         "启动-模型服务.bat",
@@ -378,6 +388,9 @@ def check_tag_version(report: Report, version: str) -> None:
 # 动态检查
 # --------------------------------------------------------------------------- #
 def run_tests(report: Report) -> None:
+    env = dict(os.environ)
+    env.setdefault("PYTHONUTF8", "1")
+    env.setdefault("PYTHONIOENCODING", "utf-8")
     proc = subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "tests"],
         cwd=str(ROOT),
@@ -385,6 +398,7 @@ def run_tests(report: Report) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=env,
     )
     output = (proc.stderr or "") + (proc.stdout or "")
     match = re.search(r"Ran (\d+) tests?", output)
