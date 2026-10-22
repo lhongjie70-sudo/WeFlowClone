@@ -19,6 +19,7 @@ vendor/WeClone/settings.jsonc
 # 数据与产物（体积大 / 含隐私）
 data/
 logs/
+release/
 
 # 测试与工具
 .pytest_cache/

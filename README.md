@@ -383,6 +383,8 @@ python -m weflow_clone.tools.mock_weflow --port 5031
 6. [常见问题](docs/06-常见问题.md)
 7. [与上游同步](docs/07-与上游同步.md)
 8. [打包与分发](docs/08-打包与分发.md) —— Windows/macOS 产物、签名、CI 发布
+9. [内置机器人](docs/09-内置机器人.md) —— 人设、检索、参数调优
+10. [发布前检查](docs/10-发布前检查.md) —— 一条命令跑完本地闸门再推 GitHub
 
 ---
 
